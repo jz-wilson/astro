@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -36,7 +35,7 @@ import (
 
 func init() {
 	// silence trace info from terraform/dag by default
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 }
 
 // AstroCLI is the main CLI program, where flags and state are stored for the
@@ -114,7 +113,10 @@ func (cli *AstroCLI) Run(args []string) (exitCode int) {
 
 	userProvidedConfigPath, err := configPathFromArgs(args)
 	if err != nil {
-		fmt.Fprintln(cli.stderr, err.Error())
+		_, err := fmt.Fprintln(cli.stderr, err.Error())
+		if err != nil {
+			return 0
+		}
 		return 1
 	}
 
@@ -125,7 +127,10 @@ func (cli *AstroCLI) Run(args []string) (exitCode int) {
 	if configFilePath != "" {
 		config, err := astro.NewConfigFromFile(configFilePath)
 		if err != nil {
-			fmt.Fprintln(cli.stderr, err.Error())
+			_, err := fmt.Fprintln(cli.stderr, err.Error())
+			if err != nil {
+				return 0
+			}
 			return 1
 		}
 
@@ -135,14 +140,20 @@ func (cli *AstroCLI) Run(args []string) (exitCode int) {
 	cli.configureDynamicUserFlags()
 
 	if err := cli.commands.root.Execute(); err != nil {
-		fmt.Fprintln(cli.stderr, err.Error())
+		_, err := fmt.Fprintln(cli.stderr, err.Error())
+		if err != nil {
+			return 0
+		}
 		exitCode = 1 // exit with error
 
 		// If we get an unknown flag, it could be because the user expected
-		// config to be loaded but it wasn't. Display a message to the user to
+		// config to be loaded, but it wasn't. Display a message to the user to
 		// let them know.
 		if cli.config == nil && strings.Contains(err.Error(), "unknown flag") {
-			fmt.Fprintln(cli.stderr, "NOTE: No astro config was loaded.")
+			_, err := fmt.Fprintln(cli.stderr, "NOTE: No astro config was loaded.")
+			if err != nil {
+				return 0
+			}
 		}
 	}
 
@@ -204,7 +215,7 @@ func (cli *AstroCLI) createPlanCmd() {
 	cli.commands.plan = planCmd
 }
 
-func (cli *AstroCLI) preRun(cmd *cobra.Command, args []string) error {
+func (cli *AstroCLI) preRun(*cobra.Command, []string) error {
 	logger.Trace.Println("cli: in preRun")
 
 	if cli.config == nil {
@@ -223,16 +234,16 @@ func (cli *AstroCLI) preRun(cmd *cobra.Command, args []string) error {
 // processError interprets certain astro errors and embellishes them for
 // display on the CLI.
 func (cli *AstroCLI) processError(err error) error {
-	switch e := err.(type) {
-	case astro.MissingRequiredVarsError:
-		// reverse map variables to CLI flags
+	var e *astro.MissingRequiredVarsError // change this line
+	switch {
+	case errors.As(err, &e):
 		return fmt.Errorf("missing required flags: %s", strings.Join(cli.varsToFlagNames(e.MissingVars()), ", "))
 	default:
 		return err
 	}
 }
 
-func (cli *AstroCLI) runApply(cmd *cobra.Command, args []string) error {
+func (cli *AstroCLI) runApply(_ *cobra.Command, args []string) error {
 	vars := flagsToUserVariables(cli.flags.projectFlags)
 
 	var moduleNames []string
@@ -255,15 +266,18 @@ func (cli *AstroCLI) runApply(cmd *cobra.Command, args []string) error {
 
 	err = cli.printExecStatus(status, results)
 	if err != nil {
-		return fmt.Errorf("Done; there were errors; some modules may not have been applied")
+		return fmt.Errorf("done; there were errors; some modules may not have been applied")
 	}
 
-	fmt.Fprintln(cli.stdout, "Done")
+	_, err = fmt.Fprintln(cli.stdout, "Done")
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (cli *AstroCLI) runPlan(cmd *cobra.Command, args []string) error {
+func (cli *AstroCLI) runPlan(_ *cobra.Command, args []string) error {
 	logger.Trace.Printf("cli: plan args: %s\n", args)
 
 	vars := flagsToUserVariables(cli.flags.projectFlags)
@@ -289,10 +303,13 @@ func (cli *AstroCLI) runPlan(cmd *cobra.Command, args []string) error {
 
 	err = cli.printExecStatus(status, results)
 	if err != nil {
-		return errors.New("Done; there were errors")
+		return errors.New("done; there were errors")
 	}
 
-	fmt.Fprintln(cli.stdout, "Done")
+	_, err = fmt.Fprintln(cli.stdout, "Done")
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

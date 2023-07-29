@@ -17,17 +17,14 @@
 package logger
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"strings"
 )
 
-// Error is a logger for error output.
-var Error = log.New(os.Stderr, "[ERROR] ", log.LstdFlags)
-
 // Trace is a logger containing debug information.
-var Trace = log.New(ioutil.Discard, "[TRACE] ", log.LstdFlags)
+var Trace = log.New(io.Discard, "[TRACE] ", log.LstdFlags)
 
 func init() {
 	if strings.ToLower(os.Getenv("ASTRO_LOG")) == "trace" {

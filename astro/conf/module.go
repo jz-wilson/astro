@@ -23,7 +23,7 @@ import (
 
 	"github.com/uber/astro/astro/utils"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 )
 
 // Module is the static configuration of a Terraform module.
@@ -67,7 +67,7 @@ func (m *Module) Validate() (errs error) {
 		}
 	}
 	if err := m.Terraform.Validate(); err != nil {
-		errs = multierror.Append(errs, fmt.Errorf("Terraform: %v", err))
+		errs = multierror.Append(errs, fmt.Errorf("terraform: %v", err))
 	}
 	for _, hook := range m.Hooks.PreModuleRun {
 		if err := hook.Validate(); err != nil {

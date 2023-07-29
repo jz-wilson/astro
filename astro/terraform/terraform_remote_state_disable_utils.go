@@ -20,13 +20,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 
 	"github.com/uber/astro/astro/logger"
 
-	version "github.com/burl/go-version"
+	"github.com/burl/go-version"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
 	"github.com/hashicorp/hcl/hcl/printer"
@@ -72,7 +71,10 @@ func deleteTerraformBackendConfigWithHCL1(in []byte) (updatedConfig []byte, err 
 	astDelIfExists(terraformConfigBlock.List, "backend")
 
 	buf := &bytes.Buffer{}
-	printer.Fprint(buf, config)
+	err = printer.Fprint(buf, config)
+	if err != nil {
+		return nil, err
+	}
 
 	return buf.Bytes(), nil
 }
@@ -80,7 +82,7 @@ func deleteTerraformBackendConfigWithHCL1(in []byte) (updatedConfig []byte, err 
 // hcl2 (used by terraform 0.12) doesn't provide interface to walk through the AST or
 // to modify block values, see https://github.com/hashicorp/hcl2/issues/23 and
 // https://github.com/hashicorp/hcl2/issues/88
-// As a work around we'll perform surgery directly on text, if backend config is simple.
+// As a workaround we'll perform surgery directly on text, if backend config is simple.
 // The method returns an error, if the config is too complicated to be parsed with the regexp.
 // This method should be rewritten once hcl2 supports AST traversal and modification.
 func deleteTerraformBackendConfigWithHCL2(in []byte) (updatedConfig []byte, err error) {
@@ -124,7 +126,7 @@ func deleteTerraformBackendConfig(in []byte, v *version.Version) (updatedConfig 
 
 func deleteTerraformBackendConfigFromFile(file string, v *version.Version) error {
 	logger.Trace.Printf("terraform: deleting backend config from %v", file)
-	b, err := ioutil.ReadFile(file)
+	b, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -135,8 +137,11 @@ func deleteTerraformBackendConfigFromFile(file string, v *version.Version) error
 	}
 
 	// Unlink the file before writing a new one; this is because we're working
-	// with a hardlinked file and we don't want to modify the original.
-	os.Remove(file)
+	// with a hard linked file, and we don't want to modify the original.
+	err = os.Remove(file)
+	if err != nil {
+		return err
+	}
 
 	newFile, err := os.Create(file)
 	if err != nil {
@@ -148,7 +153,10 @@ func deleteTerraformBackendConfigFromFile(file string, v *version.Version) error
 		return err
 	}
 
-	newFile.Close()
+	err = newFile.Close()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

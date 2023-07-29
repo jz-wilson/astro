@@ -106,7 +106,7 @@ func (r *SessionRepo) Current() (*Session, error) {
 	return session, nil
 }
 
-func (s *Session) apply(boundExecutions []*boundExecution) (<-chan string, <-chan *Result, error) {
+func (session *Session) apply(boundExecutions []*boundExecution) (<-chan string, <-chan *Result, error) {
 	logger.Trace.Println("astro session: running apply without graph")
 
 	numberOfExecutions := len(boundExecutions)
@@ -117,11 +117,11 @@ func (s *Session) apply(boundExecutions []*boundExecution) (<-chan string, <-cha
 
 	logger.Trace.Printf("astro: %d executions to apply\n", numberOfExecutions)
 
-	fns := []func(){}
+	var fns []func()
 	for _, e := range boundExecutions {
 		b := e // save for use inside the loop
 		fns = append(fns, func() {
-			terraform, err := s.newTerraformSession(b)
+			terraform, err := session.newTerraformSession(b)
 			if err != nil {
 				results <- &Result{
 					id:  b.ID(),
@@ -152,7 +152,7 @@ func (s *Session) apply(boundExecutions []*boundExecution) (<-chan string, <-cha
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		sig := <-s.signalChan
+		sig := <-session.signalChan
 		fmt.Printf("\nReceived signal: %s, cancelling all operations...\n", sig)
 		cancel()
 	}()
@@ -165,7 +165,7 @@ func (s *Session) apply(boundExecutions []*boundExecution) (<-chan string, <-cha
 	return status, results, nil
 }
 
-func (s *Session) applyWithGraph(boundExecutions []*boundExecution) (<-chan string, <-chan *Result, error) {
+func (session *Session) applyWithGraph(boundExecutions []*boundExecution) (<-chan string, <-chan *Result, error) {
 	logger.Trace.Println("astro session: running apply with graph")
 
 	// Convert unboundExecutions to executionSet
@@ -190,14 +190,14 @@ func (s *Session) applyWithGraph(boundExecutions []*boundExecution) (<-chan stri
 	go func() {
 		defer close(results)
 
-		graph.Walk(func(vertex dag.Vertex) error {
+		err := graph.Walk(func(vertex dag.Vertex) error {
 			// skip if we've reached the root
 			if _, ok := vertex.(graphNodeRoot); ok {
 				return nil
 			}
 
 			b := vertex.(*boundExecution)
-			terraform, err := s.newTerraformSession(b)
+			terraform, err := session.newTerraformSession(b)
 			if err != nil {
 				results <- &Result{
 					id:  b.ID(),
@@ -208,7 +208,7 @@ func (s *Session) applyWithGraph(boundExecutions []*boundExecution) (<-chan stri
 
 			for _, hook := range b.ModuleConfig().Hooks.PreModuleRun {
 				status <- fmt.Sprintf("[%s] Running PreModuleRun hook...", b.ID())
-				if err := runCommandkAndSetEnvironment(s.path, hook); err != nil {
+				if err := runCommandkAndSetEnvironment(session.path, hook); err != nil {
 					results <- &Result{
 						id:  b.ID(),
 						err: fmt.Errorf("error running PreModuleRun hook: %v", err),
@@ -240,12 +240,15 @@ func (s *Session) applyWithGraph(boundExecutions []*boundExecution) (<-chan stri
 			// to be skipped.
 			return err
 		})
+		if err != nil {
+			return
+		}
 	}()
 
 	return status, results, nil
 }
 
-func (s *Session) plan(boundExecutions []*boundExecution, detach bool) (<-chan string, <-chan *Result, error) {
+func (session *Session) plan(boundExecutions []*boundExecution, detach bool) (<-chan string, <-chan *Result, error) {
 	logger.Trace.Println("astro session: running plan")
 
 	numberOfExecutions := len(boundExecutions)
@@ -257,11 +260,11 @@ func (s *Session) plan(boundExecutions []*boundExecution, detach bool) (<-chan s
 	logger.Trace.Printf("astro: %d executions to plan\n", numberOfExecutions)
 
 	// Create plan functions
-	fns := []func(){}
+	var fns []func()
 	for _, e := range boundExecutions {
 		b := e // save for use inside the loop
 		fns = append(fns, func() {
-			terraform, err := s.newTerraformSession(b)
+			terraform, err := session.newTerraformSession(b)
 			if err != nil {
 				results <- &Result{
 					id:  b.ID(),
@@ -272,7 +275,7 @@ func (s *Session) plan(boundExecutions []*boundExecution, detach bool) (<-chan s
 
 			for _, hook := range e.ModuleConfig().Hooks.PreModuleRun {
 				status <- fmt.Sprintf("[%s] Running PreModuleRun hook...", b.ID())
-				if err := runCommandkAndSetEnvironment(s.path, hook); err != nil {
+				if err := runCommandkAndSetEnvironment(session.path, hook); err != nil {
 					results <- &Result{
 						id:  b.ID(),
 						err: fmt.Errorf("error running PreModuleRun hook: %v", err),
@@ -315,7 +318,7 @@ func (s *Session) plan(boundExecutions []*boundExecution, detach bool) (<-chan s
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		sig := <-s.signalChan
+		sig := <-session.signalChan
 		fmt.Printf("\nReceived signal: %s, cancelling all operations...\n", sig)
 		cancel()
 	}()

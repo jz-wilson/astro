@@ -49,7 +49,7 @@ var (
 	}
 )
 
-const VERSION_LATEST = ""
+const VersionLatest = ""
 
 type TestResult struct {
 	Stdout   *bytes.Buffer
@@ -80,7 +80,7 @@ func RunTest(t *testing.T, args []string, fixtureBasePath string, version string
 	fixturePath := fixtureBasePath
 
 	// If requested version is empty, assume the latest
-	if version == VERSION_LATEST {
+	if version == VersionLatest {
 		version = terraformVersionsToTest[len(terraformVersionsToTest)-1]
 	}
 
@@ -90,14 +90,17 @@ func RunTest(t *testing.T, args []string, fixtureBasePath string, version string
 		fixturePath = versionSpecificFixturePath
 	}
 
-	// If there is a Makefile in the fixture, run make to set up any prereqs
+	// If there is a Makefile in the fixture, run make to set up any pre-reqs
 	// for the test.
 	if utils.FileExists(filepath.Join(fixturePath, "Makefile")) {
-		make := exec.Command("make")
-		make.Dir = fixturePath
-		out, err := make.CombinedOutput()
+		command := exec.Command("command")
+		command.Dir = fixturePath
+		out, err := command.CombinedOutput()
 		if err != nil {
-			fmt.Fprint(os.Stderr, string(out))
+			_, err := fmt.Fprint(os.Stderr, string(out))
+			if err != nil {
+				return nil
+			}
 		}
 		require.NoError(t, err)
 	}
@@ -112,16 +115,32 @@ func RunTest(t *testing.T, args []string, fixtureBasePath string, version string
 	// TODO: this blocks us from running multiple tests in parallel.
 	// Need a better way to override the version externally.
 	oldPath := os.Getenv("PATH")
-	os.Setenv("PATH", fmt.Sprintf("%s:%s", terraformBinaryDir, oldPath))
-	defer os.Setenv("PATH", oldPath)
+	err = os.Setenv("PATH", fmt.Sprintf("%s:%s", terraformBinaryDir, oldPath))
+	if err != nil {
+		return nil
+	}
+	defer func(key, value string) {
+		err := os.Setenv(key, value)
+		if err != nil {
+
+		}
+	}("PATH", oldPath)
 
 	// This also blocks us from running in parallel (the need to chdir)
 	oldDir, err := os.Getwd()
 	if err != nil {
 		panic(err)
 	}
-	os.Chdir(fixturePath)
-	defer os.Chdir(oldDir)
+	err = os.Chdir(fixturePath)
+	if err != nil {
+		return nil
+	}
+	defer func(dir string) {
+		err := os.Chdir(dir)
+		if err != nil {
+
+		}
+	}(oldDir)
 
 	stdoutBytes := &bytes.Buffer{}
 	stderrBytes := &bytes.Buffer{}

@@ -18,7 +18,6 @@ package tvm
 
 import (
 	"archive/zip"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,9 +31,14 @@ import (
 func TestZipSlip(t *testing.T) {
 	t.Parallel()
 
-	tmpDir, err := ioutil.TempDir("", "astro-test")
+	tmpDir, err := os.MkdirTemp("", "astro-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tmpDir)
 
 	// Create zip path
 	tmpZipFileName := filepath.Join(tmpDir, "1/bad.zip")
@@ -44,10 +48,20 @@ func TestZipSlip(t *testing.T) {
 	// Create zip file
 	tmpZipFile, err := os.Create(tmpZipFileName)
 	require.NoError(t, err)
-	defer tmpZipFile.Close()
+	defer func(tmpZipFile *os.File) {
+		err := tmpZipFile.Close()
+		if err != nil {
+
+		}
+	}(tmpZipFile)
 
 	zipWriter := zip.NewWriter(tmpZipFile)
-	defer zipWriter.Close()
+	defer func(zipWriter *zip.Writer) {
+		err := zipWriter.Close()
+		if err != nil {
+
+		}
+	}(zipWriter)
 
 	// Add some files
 	readmeFile, err := zipWriter.Create("README.txt")
@@ -65,9 +79,14 @@ func TestZipSlip(t *testing.T) {
 	require.NoError(t, zipWriter.Close())
 
 	// Test that extracting this zip file causes an error
-	tmpDir, err = ioutil.TempDir("", "astro-test")
+	tmpDir, err = os.MkdirTemp("", "astro-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tmpDir)
 
 	err = unzip(tmpZipFile.Name(), tmpDir)
 	assert.Error(t, err)

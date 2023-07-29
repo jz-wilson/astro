@@ -26,13 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testPrintExecutions(exs []terraformExecution) {
-	for _, e := range exs {
-		fmt.Printf("Execution: %v; %v\n", e.ModuleConfig().Name, e.Variables())
-	}
-}
-
-// testReadResults reads all results channel from a astro operation and
+// testReadResults reads all results channel from an astro operation and
 // returns them as a map, indexed by execution ID.
 func testReadResults(resultChan <-chan *Result) map[string]*Result {
 	ret := map[string]*Result{}
@@ -42,7 +36,7 @@ func testReadResults(resultChan <-chan *Result) map[string]*Result {
 	return ret
 }
 
-// testResultErrs returns a map of the results and whether or not each one
+// testResultErrs returns a map of the results and whether each one
 // is an error.
 func testResultErrs(results map[string]*Result) map[string]error {
 	errors := map[string]error{}
@@ -204,7 +198,7 @@ func TestApplyFailModule(t *testing.T) {
 
 	results := testResultErrs(testReadResults(resultChan))
 
-	executionsRan := []string{}
+	var executionsRan []string
 	for id := range results {
 		executionsRan = append(executionsRan, id)
 	}

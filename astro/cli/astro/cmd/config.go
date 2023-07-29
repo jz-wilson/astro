@@ -48,7 +48,7 @@ func configPathFromArgs(args []string) (configFilePath string, err error) {
 
 	// Strip the help options from args so that the pre-loading of the config
 	// doesn't fail with pflag.ErrHelp
-	finalArgs := []string{}
+	var finalArgs []string
 	for _, arg := range args {
 		if arg == "-h" || arg == "--help" || arg == "-help" {
 			continue

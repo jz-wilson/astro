@@ -19,15 +19,15 @@ package terraform
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
 	"syscall"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 )
 
 var (
@@ -59,7 +59,12 @@ func terraformPolicyChangeToDiff(differ, policyBefore, policyAfter string) ([]by
 	if err != nil {
 		return nil, err
 	}
-	defer os.Remove(before)
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+
+		}
+	}(before)
 
 	jsonAfter, err := jsonPretty(unescape(policyAfter))
 	if err != nil {
@@ -69,7 +74,12 @@ func terraformPolicyChangeToDiff(differ, policyBefore, policyAfter string) ([]by
 	if err != nil {
 		return nil, err
 	}
-	defer os.Remove(after)
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+
+		}
+	}(after)
 
 	return diff(differ, before, after)
 }
@@ -83,13 +93,13 @@ func diff(differ, file1, file2 string) ([]byte, error) {
 	// higher. From the diff man page: "Exit status is 0 if inputs are the
 	// same, 1 if different, 2 if trouble."
 	if err != nil {
-		exitErr, ok := err.(*exec.ExitError)
-		if !ok {
-			return nil, err
-		}
-
-		status, ok := exitErr.Sys().(syscall.WaitStatus)
-		if !ok || status.ExitStatus() > 1 {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			status, ok := exitErr.Sys().(syscall.WaitStatus)
+			if !ok || status.ExitStatus() > 1 {
+				return nil, err
+			}
+		} else {
 			return nil, err
 		}
 	}
@@ -97,7 +107,7 @@ func diff(differ, file1, file2 string) ([]byte, error) {
 	return out, nil
 }
 
-// jsonPretty takes unformatted JSON and indents it so it is human readable. If
+// jsonPretty takes formatted JSON and indents it, so it is human-readable. If
 // the JSON cannot be indented, the original JSON is returned.
 func jsonPretty(in []byte) ([]byte, error) {
 	if len(in) == 0 {
@@ -185,14 +195,20 @@ func unescape(in string) []byte {
 // writeToTempFile creates a temporary file and writes the specified data to
 // it.
 func writeToTempFile(data []byte) (filePath string, err error) {
-	tmpfile, err := ioutil.TempFile("", "")
+	tmpfile, err := os.CreateTemp("", "")
 	if err != nil {
 		return "", err
 	}
 
 	if len(data) > 0 {
-		tmpfile.Write(data)
-		tmpfile.Write(newline)
+		_, err := tmpfile.Write(data)
+		if err != nil {
+			return "", err
+		}
+		_, err = tmpfile.Write(newline)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return tmpfile.Name(), nil

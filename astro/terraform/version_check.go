@@ -16,9 +16,9 @@
 
 package terraform
 
-import version "github.com/burl/go-version"
+import "github.com/burl/go-version"
 
-// VersionMatches returns whether or not the version matches the constraint. A
+// VersionMatches returns whether the version matches the constraint. A
 // constraint is a string like ">0.7.0" or "<1". See the go-version
 // documentation for more info:
 // https://github.com/hashicorp/go-version

@@ -19,7 +19,7 @@ package cmd
 import (
 	"io"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 )
 
 // Option is an option for the cli that allows for changing of options or
@@ -47,14 +47,6 @@ func WithStdout(stdout io.Writer) Option {
 func WithStderr(stderr io.Writer) Option {
 	return func(cli *AstroCLI) error {
 		cli.stderr = stderr
-		return nil
-	}
-}
-
-// WithStdin allows you to pass a custom stdin.
-func WithStdin(stdin io.Reader) Option {
-	return func(cli *AstroCLI) error {
-		cli.stdin = stdin
 		return nil
 	}
 }

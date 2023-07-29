@@ -17,7 +17,7 @@
 package exec2_test
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"syscall"
 	"testing"
@@ -64,10 +64,15 @@ func TestProcessError(t *testing.T) {
 }
 
 func TestCombinedOutputLog(t *testing.T) {
-	tmpLogFile, err := ioutil.TempFile("", "")
+	tmpLogFile, err := os.CreateTemp("", "")
 	require.NoError(t, err)
 
-	defer os.Remove(tmpLogFile.Name())
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+
+		}
+	}(tmpLogFile.Name())
 
 	// This process writes something to stdout and stderr
 	process := exec2.NewProcess(exec2.Cmd{
@@ -80,7 +85,7 @@ func TestCombinedOutputLog(t *testing.T) {
 	require.NoError(t, err)
 
 	// Read contents back from log file
-	logFileContents, err := ioutil.ReadAll(tmpLogFile)
+	logFileContents, err := io.ReadAll(tmpLogFile)
 	require.NoError(t, err)
 
 	// Log file should be stdout/stderr combined; but we can't be sure
@@ -97,7 +102,10 @@ func TestCombinedOutputLog(t *testing.T) {
 func TestExited(t *testing.T) {
 	process := newHelloWorld()
 	assert.False(t, process.Exited())
-	process.Run()
+	err := process.Run()
+	if err != nil {
+		return
+	}
 	assert.True(t, process.Exited())
 }
 
@@ -124,7 +132,12 @@ func TestProcessInterrupted(t *testing.T) {
 
 	// send SIGINT signal to the process
 	pr := process.Process()
-	defer pr.Signal(syscall.SIGKILL)
+	defer func(pr *os.Process, sig os.Signal) {
+		err := pr.Signal(sig)
+		if err != nil {
+
+		}
+	}(pr, syscall.SIGKILL)
 	require.NoError(t, pr.Signal(syscall.SIGINT))
 
 	<-processChan

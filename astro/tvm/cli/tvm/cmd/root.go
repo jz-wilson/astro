@@ -21,7 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +32,7 @@ var rootCmd = &cobra.Command{
 	Use:   "tvm",
 	Short: "Terraform version manager",
 	Long: `Terraform version manager allows you to download and install
-specific verions of Terraform for your platform.`,
+specific versions of Terraform for your platform.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

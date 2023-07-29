@@ -17,7 +17,7 @@
 package astro
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -35,7 +35,7 @@ func TestHookStartupSuccess(t *testing.T) {
 	session, err := c.sessions.Current()
 	require.NoError(t, err)
 
-	b, err := ioutil.ReadFile(filepath.Join(session.path, "mock-hook.log"))
+	b, err := os.ReadFile(filepath.Join(session.path, "mock-hook.log"))
 	require.NoError(t, err)
 
 	assert.Equal(t, "SUCCESS\n", string(b))

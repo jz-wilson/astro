@@ -17,7 +17,6 @@
 package tvm_test
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -34,13 +33,18 @@ func TestDownloadSameRepo(t *testing.T) {
 		t.Skip("skipping download test in short mode.")
 	}
 
-	tmpdir, err := ioutil.TempDir("", "terraform-tests")
+	tmpdir, err := os.MkdirTemp("", "terraform-tests")
 	require.NoError(t, err)
 
-	defer os.RemoveAll(tmpdir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tmpdir)
 
 	for i := 1; i <= 3; i++ {
-		t.Run(string(i), func(t *testing.T) {
+		t.Run(string(rune(i)), func(t *testing.T) {
 			t.Parallel()
 
 			versions, err := tvm.NewVersionRepoForCurrentSystem(tmpdir)
@@ -59,23 +63,28 @@ func TestDownloadSameRepo(t *testing.T) {
 
 // TestDownloadDifferentRepo does multiple downloads in parallel
 // reinitializing the repo every time. This will cause multiple downloads to
-// occur but it will test for races that can occur when executing a binary that
+// occur, but it will test for races that can occur when executing a binary that
 // is currently being written to.
 func TestDownloadDifferentRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping download test in short mode.")
 	}
 
-	tmpdir, err := ioutil.TempDir("", "terraform-tests")
+	tmpdir, err := os.MkdirTemp("", "terraform-tests")
 	require.NoError(t, err)
 
-	defer os.RemoveAll(tmpdir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tmpdir)
 
 	versions, err := tvm.NewVersionRepoForCurrentSystem(tmpdir)
 	require.NoError(t, err)
 
 	for i := 1; i <= 3; i++ {
-		t.Run(string(i), func(t *testing.T) {
+		t.Run(string(rune(i)), func(t *testing.T) {
 			t.Parallel()
 
 			terraformBinary, err := versions.Get("0.7.13")

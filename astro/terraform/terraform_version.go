@@ -21,7 +21,7 @@ import (
 
 	"github.com/uber/astro/astro/tvm"
 
-	version "github.com/burl/go-version"
+	"github.com/burl/go-version"
 )
 
 // Version returns the version of Terraform that the binary identifies

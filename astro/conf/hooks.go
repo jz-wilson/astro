@@ -65,7 +65,7 @@ func (conf *ModuleHooks) ApplyDefaultsFrom(defaultHooks Hooks) {
 // Validate checks the hook configuration is good
 func (hook *Hook) Validate() error {
 	if hook.Command == "" {
-		return errors.New("Missing hook command")
+		return errors.New("missing hook command")
 	}
 	return nil
 }

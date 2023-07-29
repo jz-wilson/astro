@@ -24,8 +24,8 @@ import (
 	"github.com/uber/astro/astro/logger"
 	"github.com/uber/astro/astro/tvm"
 
-	version "github.com/burl/go-version"
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/burl/go-version"
+	"github.com/hashicorp/go-multierror"
 )
 
 // Terraform configuration that affect the running of Terraform itself.
@@ -68,13 +68,13 @@ func (conf *Terraform) SetDefaultPath() error {
 
 // SetVersionFromBinary sets the value of the Version field from the binary.
 func (conf *Terraform) SetVersionFromBinary() error {
-	version, err := tvm.InspectVersion(conf.Path)
+	inspectVersion, err := tvm.InspectVersion(conf.Path)
 	if err != nil {
 		return fmt.Errorf("unable to detect Terraform version: %v", err)
 	}
 
-	logger.Trace.Printf("conf/terraform: set Terraform version to: %v", version)
-	conf.Version = version
+	logger.Trace.Printf("conf/terraform: set Terraform version to: %v", inspectVersion)
+	conf.Version = inspectVersion
 	return nil
 }
 
@@ -84,7 +84,7 @@ func (conf *Terraform) Validate() (errs error) {
 	// can be left blank and astro will detect and autofill the version from
 	// the Terraform in the user's environment.
 	if conf.Version == nil {
-		errs = multierror.Append(errs, errors.New("Version is not set"))
+		errs = multierror.Append(errs, errors.New("version is not set"))
 	}
 	return errs
 }

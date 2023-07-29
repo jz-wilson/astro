@@ -25,7 +25,7 @@ import (
 )
 
 func TestHelpWorks(t *testing.T) {
-	result := tests.RunTest(t, []string{"--help"}, "fixtures/no-config", tests.VERSION_LATEST)
+	result := tests.RunTest(t, []string{"--help"}, "fixtures/no-config", tests.VersionLatest)
 	assert.Contains(t, result.Stderr.String(), "A tool for managing multiple Terraform modules")
 	assert.Equal(t, 0, result.ExitCode)
 }
@@ -33,7 +33,7 @@ func TestHelpUserFlags(t *testing.T) {
 	result := tests.RunTest(t, []string{
 		"plan",
 		"--help",
-	}, "fixtures/config-simple", tests.VERSION_LATEST)
+	}, "fixtures/config-simple", tests.VersionLatest)
 	assert.Contains(t, result.Stderr.String(), "User flags:")
 	assert.Contains(t, result.Stderr.String(), "--foo")
 	assert.Contains(t, result.Stderr.String(), "--baz")
@@ -46,7 +46,7 @@ func TestHelpNoUserFlags(t *testing.T) {
 		"--config=no_variables.yaml",
 		"plan",
 		"--help",
-	}, "fixtures/flags", tests.VERSION_LATEST)
+	}, "fixtures/flags", tests.VersionLatest)
 	assert.NotContains(t, result.Stderr.String(), "User flags:")
 }
 
@@ -55,7 +55,7 @@ func TestConfigLoadErrorWhenSpecified(t *testing.T) {
 		"--config=/nonexistent/path/to/config",
 		"plan",
 		"--help",
-	}, "fixtures/config-simple", tests.VERSION_LATEST)
+	}, "fixtures/config-simple", tests.VersionLatest)
 	assert.Contains(t, result.Stderr.String(), "file does not exist")
 	assert.Equal(t, 1, result.ExitCode)
 }
@@ -65,7 +65,7 @@ func TestUnknownFlag(t *testing.T) {
 		"plan",
 		"--foo",
 		"bar",
-	}, "fixtures/flags", tests.VERSION_LATEST)
+	}, "fixtures/flags", tests.VersionLatest)
 	assert.Contains(t, result.Stderr.String(), "No astro config was loaded")
 	assert.Equal(t, 1, result.ExitCode)
 }
@@ -73,7 +73,7 @@ func TestUnknownFlag(t *testing.T) {
 func TestPlanErrorOnMissingValues(t *testing.T) {
 	result := tests.RunTest(t, []string{
 		"plan",
-	}, "fixtures/config-simple", tests.VERSION_LATEST)
+	}, "fixtures/config-simple", tests.VersionLatest)
 	assert.Equal(t, 1, result.ExitCode)
 	assert.Contains(t, result.Stderr.String(), "missing required flags")
 	assert.Contains(t, result.Stderr.String(), "--foo")
@@ -109,7 +109,7 @@ func TestPlanAllowedValues(t *testing.T) {
 				"plan",
 				"--environment",
 				tt.env,
-			}, "fixtures/flags", tests.VERSION_LATEST)
+			}, "fixtures/flags", tests.VersionLatest)
 			// Check that all expected modules were planned for environment
 			for _, module := range tt.expectedModules {
 				assert.Contains(t, result.Stdout.String(), module)
@@ -126,7 +126,7 @@ func TestPlanFailOnNotAllowedValue(t *testing.T) {
 		"plan",
 		"--environment",
 		"foo",
-	}, "fixtures/flags", tests.VERSION_LATEST)
+	}, "fixtures/flags", tests.VersionLatest)
 	assert.Equal(t, 1, result.ExitCode)
 	assert.Contains(t, result.Stderr.String(), "invalid argument")
 	assert.Contains(t, result.Stderr.String(), "allowed values")

@@ -66,7 +66,10 @@ func (p *Process) configureOutputs() error {
 		stdoutWriters = append(stdoutWriters, combinedOutputLog)
 		stderrWriters = append(stderrWriters, combinedOutputLog)
 
-		fmt.Fprintf(combinedOutputLog, "+ %s %s\n", p.config.Command, p.config.Args)
+		_, err = fmt.Fprintf(combinedOutputLog, "+ %s %s\n", p.config.Command, p.config.Args)
+		if err != nil {
+			return err
+		}
 	}
 
 	p.execCmd.Stdout = io.MultiWriter(stdoutWriters...)
@@ -115,7 +118,10 @@ func (p *Process) Run() error {
 	// Apply options
 	p.execCmd.Dir = p.config.WorkingDir
 	p.execCmd.Env = p.config.Env
-	p.configureOutputs()
+	err := p.configureOutputs()
+	if err != nil {
+		return err
+	}
 
 	if isInterrupted {
 		return fmt.Errorf("astro was interrupted, command won't be run: %s, args: %v", command, args)

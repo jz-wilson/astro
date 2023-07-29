@@ -31,7 +31,7 @@ type executionSet []terraformExecution
 // all executions bound to userVars. An error is thrown if any of the
 // executions in the current set are already bound.
 func (s executionSet) bindAll(userVars map[string]string) ([]*boundExecution, error) {
-	results := []*boundExecution{}
+	var results []*boundExecution
 	for _, e := range s {
 		unbound, ok := e.(*unboundExecution)
 		if !ok {
@@ -123,7 +123,10 @@ func (s executionSet) graph() (*dag.AcyclicGraph, error) {
 		}
 	}
 
-	addRoot(graph)
+	err := addRoot(graph)
+	if err != nil {
+		return nil, err
+	}
 
 	return graph, nil
 }

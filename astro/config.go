@@ -18,7 +18,6 @@ package astro
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +30,7 @@ import (
 
 // NewConfigFromFile parses the configuration in the specified config file
 func NewConfigFromFile(configFilePath string) (*conf.Project, error) {
-	yamlBytes, err := ioutil.ReadFile(configFilePath)
+	yamlBytes, err := os.ReadFile(configFilePath)
 	if err != nil {
 		return nil, err
 	}

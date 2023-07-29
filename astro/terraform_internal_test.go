@@ -100,9 +100,17 @@ func TestProjectUsesDefaultTerraformPath(t *testing.T) {
 
 func TestSharedPluginCache(t *testing.T) {
 	oldVal := os.Getenv("TF_PLUGIN_CACHE_DIR")
-	defer os.Setenv("TF_PLUGIN_CACHE_DIR", oldVal)
+	defer func(key, value string) {
+		err := os.Setenv(key, value)
+		if err != nil {
 
-	os.Unsetenv("TF_PLUGIN_CACHE_DIR")
+		}
+	}("TF_PLUGIN_CACHE_DIR", oldVal)
+
+	err := os.Unsetenv("TF_PLUGIN_CACHE_DIR")
+	if err != nil {
+		return
+	}
 
 	// Configration points to a mock version of Terraform that verifies if
 	// TF_PLUGIN_CACHE_DIR is set
@@ -121,11 +129,19 @@ func TestSharedPluginCache(t *testing.T) {
 
 func TestSharedPluginCachePreservesExisting(t *testing.T) {
 	oldVal := os.Getenv("TF_PLUGIN_CACHE_DIR")
-	defer os.Setenv("TF_PLUGIN_CACHE_DIR", oldVal)
+	defer func(key, value string) {
+		err := os.Setenv(key, value)
+		if err != nil {
 
-	os.Setenv("TF_PLUGIN_CACHE_DIR", "foobar")
+		}
+	}("TF_PLUGIN_CACHE_DIR", oldVal)
 
-	// Configration points to a mock version of Terraform that verifies if
+	err := os.Setenv("TF_PLUGIN_CACHE_DIR", "foobar")
+	if err != nil {
+		return
+	}
+
+	// Configuration points to a mock version of Terraform that verifies if
 	// TF_PLUGIN_CACHE_DIR is set to "foobar"
 	c, err := NewProjectFromConfigFile("fixtures/test-terraform-shared-plugin-cache-preserve-existing/astro.yaml")
 	require.NoError(t, err)

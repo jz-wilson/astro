@@ -62,7 +62,7 @@ func (m *module) executions(parameters ExecutionParameters) executionSet {
 	var variableValues [][]interface{}
 
 	for _, variable := range m.config.Variables {
-		v := []interface{}{}
+		var v []interface{}
 		filtered := variable.IsFilter() && parameters.UserVars.Values[variable.Name] != ""
 
 		if variable.Values != nil {

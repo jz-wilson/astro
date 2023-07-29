@@ -23,7 +23,7 @@ import (
 	"os/exec"
 	"sort"
 
-	version "github.com/burl/go-version"
+	"github.com/burl/go-version"
 	"github.com/spf13/cobra"
 
 	"github.com/uber/astro/astro/tvm"
@@ -45,7 +45,7 @@ var listCmd = &cobra.Command{
 		}
 
 		// Extract just the version strings
-		versions := []string{}
+		var versions []string
 		for v := range versionsPaths {
 			versions = append(versions, v)
 		}

@@ -26,7 +26,7 @@ import (
 )
 
 func TestErrorDisplay(t *testing.T) {
-	result := tests.RunTest(t, []string{"plan"}, "fixtures/plan-error", tests.VERSION_LATEST)
+	result := tests.RunTest(t, []string{"plan"}, "fixtures/plan-error", tests.VersionLatest)
 
 	re := regexp.MustCompile("There are some problems with the configuration")
 	matches := re.FindAllString(result.Stderr.String(), -1)

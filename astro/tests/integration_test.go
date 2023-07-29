@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -48,12 +47,12 @@ func getSessionDirs(sessionBaseDir string) ([]string, error) {
 		return nil, err
 	}
 
-	dirs, err := ioutil.ReadDir(sessionBaseDir)
+	dirs, err := os.ReadDir(sessionBaseDir)
 	if err != nil {
 		return nil, err
 	}
 
-	sessionDirs := []string{}
+	var sessionDirs []string
 
 	for _, dir := range dirs {
 		if sessionRegexp.MatchString(dir.Name()) {
@@ -64,7 +63,7 @@ func getSessionDirs(sessionBaseDir string) ([]string, error) {
 	return sessionDirs, nil
 }
 
-// stringVersionMatches returns whether or not the version passed as string matches the constraint.
+// stringVersionMatches returns whether the version passed as string matches the constraint.
 // See terraform.VersionMatches for more info.
 func stringVersionMatches(v string, versionConstraint string) bool {
 	return terraform.VersionMatches(version.Must(version.NewVersion(v)), versionConstraint)
@@ -95,11 +94,24 @@ func TestPlanInterrupted(t *testing.T) {
 	require.NoError(t, err)
 
 	oldPath := os.Getenv("PATH")
-	os.Setenv("PATH", fmt.Sprintf("%s:%s", fakeTerraformDir, oldPath))
-	defer os.Setenv("PATH", oldPath)
+	err = os.Setenv("PATH", fmt.Sprintf("%s:%s", fakeTerraformDir, oldPath))
+	if err != nil {
+		return
+	}
+	defer func(key, value string) {
+		err := os.Setenv(key, value)
+		if err != nil {
 
-	tmpdir, err := ioutil.TempDir("", "astro-binary")
-	defer os.RemoveAll(tmpdir)
+		}
+	}("PATH", oldPath)
+
+	tmpdir, err := os.MkdirTemp("", "astro-binary")
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tmpdir)
 	require.NoError(t, err)
 
 	astroBinary, err := compileAstro(tmpdir, []string{})
@@ -147,15 +159,15 @@ func TestPlanInterrupted(t *testing.T) {
 }
 
 func TestProjectApplyChangesSuccess(t *testing.T) {
-	for _, version := range terraformVersionsToTest {
-		t.Run(version, func(t *testing.T) {
+	for _, v := range terraformVersionsToTest {
+		t.Run(v, func(t *testing.T) {
 			err := os.RemoveAll("/tmp/terraform-tests/apply-changes-success")
 			require.NoError(t, err)
 
 			err = os.MkdirAll("/tmp/terraform-tests/apply-changes-success", 0775)
 			require.NoError(t, err)
 
-			result := RunTest(t, []string{"apply"}, "fixtures/apply-changes-success", version)
+			result := RunTest(t, []string{"apply"}, "fixtures/apply-changes-success", v)
 			assert.Contains(t, result.Stdout.String(), "foo: [32mOK")
 			assert.Empty(t, result.Stderr.String())
 			assert.Equal(t, 0, result.ExitCode)
@@ -164,9 +176,9 @@ func TestProjectApplyChangesSuccess(t *testing.T) {
 }
 
 func TestProjectPlanSuccessNoChanges(t *testing.T) {
-	for _, version := range terraformVersionsToTest {
-		t.Run(version, func(t *testing.T) {
-			result := RunTest(t, []string{"plan", "--trace"}, "fixtures/plan-success-nochanges", version)
+	for _, v := range terraformVersionsToTest {
+		t.Run(v, func(t *testing.T) {
+			result := RunTest(t, []string{"plan", "--trace"}, "fixtures/plan-success-nochanges", v)
 			assert.Regexp(t, noChangesRegexp, result.Stdout.String())
 			assert.Equal(t, 0, result.ExitCode)
 		})
@@ -174,12 +186,12 @@ func TestProjectPlanSuccessNoChanges(t *testing.T) {
 }
 
 func TestProjectPlanSuccessChanges(t *testing.T) {
-	for _, version := range terraformVersionsToTest {
-		t.Run(version, func(t *testing.T) {
-			result := RunTest(t, []string{"plan"}, "fixtures/plan-success-changes", version)
+	for _, v := range terraformVersionsToTest {
+		t.Run(v, func(t *testing.T) {
+			result := RunTest(t, []string{"plan"}, "fixtures/plan-success-changes", v)
 			assert.Contains(t, result.Stdout.String(), "foo: [32mOK[0m[33m Changes[0m[37m")
 			addedResourceRe := `\+.*null_resource.foo`
-			if stringVersionMatches(version, ">=0.12") {
+			if stringVersionMatches(v, ">=0.12") {
 				addedResourceRe = `null_resource.foo.*will be created`
 			}
 			assert.Regexp(t, addedResourceRe, result.Stdout.String())
@@ -189,12 +201,12 @@ func TestProjectPlanSuccessChanges(t *testing.T) {
 }
 
 func TestProjectPlanError(t *testing.T) {
-	for _, version := range terraformVersionsToTest {
-		t.Run(version, func(t *testing.T) {
-			result := RunTest(t, []string{"plan"}, "fixtures/plan-error", version)
+	for _, v := range terraformVersionsToTest {
+		t.Run(v, func(t *testing.T) {
+			result := RunTest(t, []string{"plan"}, "fixtures/plan-error", v)
 			assert.Contains(t, result.Stderr.String(), "foo: [31mERROR")
 			errorMessage := "Error parsing"
-			if stringVersionMatches(version, ">=0.12") {
+			if stringVersionMatches(v, ">=0.12") {
 				errorMessage = "Argument or block definition required"
 			}
 			assert.Contains(t, result.Stderr.String(), errorMessage)
@@ -204,15 +216,15 @@ func TestProjectPlanError(t *testing.T) {
 }
 
 func TestProjectPlanDetachSuccess(t *testing.T) {
-	for _, version := range terraformVersionsToTest {
-		t.Run(version, func(t *testing.T) {
+	for _, v := range terraformVersionsToTest {
+		t.Run(v, func(t *testing.T) {
 			err := os.RemoveAll("/tmp/terraform-tests/plan-detach")
 			require.NoError(t, err)
 
 			err = os.MkdirAll("/tmp/terraform-tests/plan-detach", 0775)
 			require.NoError(t, err)
 
-			result := RunTest(t, []string{"plan", "--detach"}, "fixtures/plan-detach", version)
+			result := RunTest(t, []string{"plan", "--detach"}, "fixtures/plan-detach", v)
 			require.Empty(t, result.Stderr.String())
 			require.Equal(t, 0, result.ExitCode)
 			require.Regexp(t, noChangesRegexp, result.Stdout.String())
@@ -228,8 +240,13 @@ func TestProjectPlanDetachSuccess(t *testing.T) {
 }
 
 func TestVersionDev(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "astro-tests")
-	defer os.RemoveAll(dir)
+	dir, err := os.MkdirTemp("/tmp", "astro-tests")
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(dir)
 	require.NoError(t, err)
 	result := RunTest(t, []string{"version"}, "/tmp/astro-tests", "")
 	assert.Equal(t, "", result.Stderr.String())
@@ -238,8 +255,13 @@ func TestVersionDev(t *testing.T) {
 }
 
 func TestVersionWithLdflags(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "astro-tests")
-	defer os.RemoveAll(dir)
+	dir, err := os.MkdirTemp("/tmp", "astro-tests")
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(dir)
 	require.NoError(t, err)
 
 	stdoutBytes := &bytes.Buffer{}
@@ -267,8 +289,13 @@ func TestVersionWithLdflags(t *testing.T) {
 }
 
 func TestAstroErrorsWithoutConfig(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "astro-tests")
-	defer os.RemoveAll(dir)
+	dir, err := os.MkdirTemp("/tmp", "astro-tests")
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(dir)
 	require.NoError(t, err)
 
 	commands := []string{"plan", "apply"}

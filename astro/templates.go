@@ -26,7 +26,7 @@ import (
 
 var (
 	// matches "{fox}" in "the quick {fox}"
-	reVarPlaceholder = regexp.MustCompile(`\{(.*)\}`)
+	reVarPlaceholder = regexp.MustCompile(`\{(.*)}`)
 )
 
 // extractMissingVarNames takes an input string like "foo {bar} {baz}" and
@@ -87,11 +87,14 @@ func replaceVarsInMapValues(inputMap map[string]string, data interface{}) (map[s
 // replaceVars takes a string as a template, executes the template against the
 // data provided and returns the result as a string.
 func replaceVars(s string, data interface{}) (string, error) {
-	template := template.New("")
-	if _, err := template.Parse(s); err != nil {
+	t := template.New("")
+	if _, err := t.Parse(s); err != nil {
 		return "", err
 	}
 	buffer := &bytes.Buffer{}
-	template.Execute(buffer, data)
+	err := t.Execute(buffer, data)
+	if err != nil {
+		return "", err
+	}
 	return buffer.String(), nil
 }

@@ -37,7 +37,6 @@ import (
 // Executions can have dependencies between each other (again, defined
 // in the configuration). Based on dependencies, all modules can be
 // planned or applied concurrently.
-//
 type Project struct {
 	config            *conf.Project
 	sessions          *SessionRepo
@@ -101,7 +100,7 @@ func (c *Project) executions(parameters ExecutionParameters) executionSet {
 
 // modules creates a list of modules based on the config.
 func (c *Project) modules(moduleNames []string) []*module {
-	results := []*module{}
+	var results []*module
 	for _, moduleConfig := range c.config.Modules {
 		// skip, if we're filtering and this module doesn't match the filter
 		if moduleNames != nil && !utils.StringSliceContains(moduleNames, moduleConfig.Name) {

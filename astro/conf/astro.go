@@ -19,7 +19,7 @@ package conf
 import (
 	"fmt"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 )
 
 // Project represents the structure of the YAML configuration for astro.
@@ -58,12 +58,12 @@ func (conf *Project) Validate() (errs error) {
 	}
 	for _, moduleConf := range conf.Modules {
 		if err := moduleConf.Validate(); err != nil {
-			errs = multierror.Append(errs, fmt.Errorf("Module[%v]: %v", moduleConf.Name, err))
+			errs = multierror.Append(errs, fmt.Errorf("module[%v]: %v", moduleConf.Name, err))
 		}
 	}
 	for _, hook := range conf.Hooks.Startup {
 		if err := hook.Validate(); err != nil {
-			errs = multierror.Append(errs, fmt.Errorf("Startup Hook: %v", err))
+			errs = multierror.Append(errs, fmt.Errorf("startup Hook: %v", err))
 		}
 	}
 	for _, hook := range conf.Hooks.PreModuleRun {

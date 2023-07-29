@@ -39,12 +39,12 @@ func (e *MissingRequiredVarsError) plural() string {
 }
 
 // Error is the error message, so this satisfies the error interface.
-func (e MissingRequiredVarsError) Error() string {
+func (e *MissingRequiredVarsError) Error() string {
 	return fmt.Sprintf("missing required variable%s: %s", e.plural(), strings.Join(e.missing, ", "))
 }
 
 // MissingVars returns a list of the missing user variables.
-func (e MissingRequiredVarsError) MissingVars() []string {
+func (e *MissingRequiredVarsError) MissingVars() []string {
 	return e.missing
 }
 
@@ -80,15 +80,15 @@ func (e *execution) Name() string {
 // ID returns a unique ID for this execution.
 func (e *execution) ID() string {
 	// For boundExecutions, the ID should be:
-	// {modulename}-{variableValue1}-{variableValue2}-{and so on...}
+	// {moduleName}-{variableValue1}-{variableValue2}-{and so on...}
 	// Where variableValues are the values of the runtime variables.
 
-	values := []string{}
+	var values []string
 
 	// Since runtime variables may have values that don't directly
 	// pertain to this module/execution, we need to extract only the
 	// variable names that are relevant to this module.
-	keys := []string{}
+	var keys []string
 	for _, v := range e.ModuleConfig().Variables {
 		keys = append(keys, v.Name)
 	}
@@ -147,7 +147,7 @@ func (e *unboundExecution) bind(userVars map[string]string) (*boundExecution, er
 		}
 	}
 
-	missingVars := []string{}
+	var missingVars []string
 	// Check that the user provided variables replace everything that
 	// needs to be replaced.
 	for _, val := range boundVars {
@@ -157,7 +157,7 @@ func (e *unboundExecution) bind(userVars map[string]string) (*boundExecution, er
 	}
 
 	if len(missingVars) > 0 {
-		return nil, MissingRequiredVarsError{missing: missingVars}
+		return nil, &MissingRequiredVarsError{missing: missingVars}
 	}
 
 	// Create a copy of the config and search attributes for placeholders

@@ -18,14 +18,13 @@ package astro
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/uber/astro/astro/utils"
 
-	version "github.com/burl/go-version"
+	"github.com/burl/go-version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -76,16 +75,24 @@ func TestRewritePathsInternal(t *testing.T) {
 
 	for i := range tests {
 		expected := absolutePath(tests[i])
-		rewriteRelPaths(absolutePath(""), false, &tests[i])
+		err := rewriteRelPaths(absolutePath(""), false, &tests[i])
+		if err != nil {
+			return
+		}
 		assert.Equal(t, expected, tests[i])
 	}
 }
 
 func TestSessionRepoDir(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "")
+	tmpdir, err := os.MkdirTemp("", "")
 	require.NoError(t, err)
 
-	defer os.RemoveAll(tmpdir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tmpdir)
 
 	testConfigFilePath := filepath.Join(tmpdir, "test-session-repo-dir.yaml")
 

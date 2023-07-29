@@ -18,11 +18,9 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
-
 	"github.com/uber/astro/astro"
 	"github.com/uber/astro/astro/terraform"
+	"io"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/logrusorgru/aurora"
@@ -39,11 +37,14 @@ func (cli *AstroCLI) printExecStatus(status <-chan string, results <-chan *astro
 			if cli.flags.verbose {
 				out = cli.stdout
 			} else {
-				out = ioutil.Discard
+				out = io.Discard
 			}
 
 			for update := range status {
-				fmt.Fprintln(out, update)
+				_, err := fmt.Fprintln(out, update)
+				if err != nil {
+					return
+				}
 			}
 		}()
 	}
@@ -85,12 +86,15 @@ func (cli *AstroCLI) printExecStatus(status <-chan string, results <-chan *astro
 		}
 
 		// Print status line
-		fmt.Fprintf(out, "%s: %s%s%s\n",
+		_, err := fmt.Fprintf(out, "%s: %s%s%s\n",
 			result.ID(),
 			resultType,
 			changesInfo,
 			runtimeInfo,
 		)
+		if err != nil {
+			return err
+		}
 
 		// If this was a plan, print the plan
 		if planResult != nil && planResult.HasChanges() {
@@ -99,17 +103,29 @@ func (cli *AstroCLI) printExecStatus(status <-chan string, results <-chan *astro
 				var err error
 				planOutput, err = terraform.ReadableTerraformPolicyChanges(planOutput)
 				if err != nil {
-					fmt.Fprintf(out, "\n%s", err)
+					_, err := fmt.Fprintf(out, "\n%s", err)
+					if err != nil {
+						return err
+					}
 				}
 			}
-			fmt.Fprintf(out, "\n%s", planOutput)
+			_, err := fmt.Fprintf(out, "\n%s", planOutput)
+			if err != nil {
+				return err
+			}
 		}
 
 		// If there is a stderr, print it
 		if terraformResult != nil {
-			fmt.Fprintf(out, terraformResult.Stderr())
+			_, err := fmt.Fprintf(out, terraformResult.Stderr())
+			if err != nil {
+				return err
+			}
 		} else if result.Err() != nil {
-			fmt.Fprintln(out, result.Err())
+			_, err := fmt.Fprintln(out, result.Err())
+			if err != nil {
+				return err
+			}
 		}
 	}
 

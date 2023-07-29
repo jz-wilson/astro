@@ -28,12 +28,6 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// Text that will be appended to the --help output for plan/apply, showing
-// user flags from the astro project config.
-const userHelpTemplate = `
-User flags:
-{{.projectFlagsHelp}}`
-
 // projectFlag is a CLI flag that represents a variable from the user's astro
 // project config file.
 type projectFlag struct {
@@ -108,11 +102,14 @@ func addProjectFlagsToCommands(flags []*projectFlag, cmds ...*cobra.Command) {
 
 		cmd.SetHelpTemplate(helpTmpl)
 
-		// Mark flag hidden so it doesn't appear in the normal help. We have to
+		// Mark flag hidden, so it doesn't appear in the normal help. We have to
 		// do this *after* calling flagUsages above, otherwise the flags don't
 		// appear in the output.
 		for _, flag := range flags {
-			cmd.Flags().MarkHidden(flag.Name)
+			err := cmd.Flags().MarkHidden(flag.Name)
+			if err != nil {
+				return
+			}
 		}
 	}
 }

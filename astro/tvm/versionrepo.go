@@ -21,7 +21,6 @@ package tvm
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -31,7 +30,7 @@ import (
 
 	"github.com/uber/astro/astro/utils"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 )
 
 // terraformBinaryFile is the name of the Terraform binary.
@@ -106,11 +105,16 @@ func (r *VersionRepo) download(version string) (string, error) {
 	url := fmt.Sprintf(terraformZipFileDownloadURL, version, version, r.platform, r.arch)
 
 	// Temporary directory for downloading Terraform and extracting the zip file
-	tmpDir, err := ioutil.TempDir("", "terraform")
+	tmpDir, err := os.MkdirTemp("", "terraform")
 	if err != nil {
 		return "", err
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tmpDir)
 
 	zipFilePath := path.Join(tmpDir, "terraform.zip")
 
@@ -128,7 +132,7 @@ func (r *VersionRepo) download(version string) (string, error) {
 
 	// Check the binary is there
 	if !utils.FileExists(terraformBinaryPath) {
-		return "", errors.New("Terraform binary missing from zip file")
+		return "", errors.New("terraform binary missing from zip file")
 	}
 
 	targetDir := r.dir(version)
@@ -146,7 +150,7 @@ func (r *VersionRepo) download(version string) (string, error) {
 	return r.terraformPath(version), nil
 }
 
-// exists returns whether or not the binary for the specified version
+// exists returns whether the binary for the specified version
 // exists.
 func (r *VersionRepo) exists(version string) bool {
 	return utils.FileExists(r.terraformPath(version))
@@ -171,11 +175,11 @@ func (r *VersionRepo) Get(version string) (string, error) {
 	lock.Lock()
 	defer lock.Unlock()
 
-	path := r.terraformPath(version)
-	if !utils.FileExists(path) {
+	terraformPath := r.terraformPath(version)
+	if !utils.FileExists(terraformPath) {
 		return r.download(version)
 	}
-	return path, nil
+	return terraformPath, nil
 }
 
 // Link symlinks the version binary into the targetPath. It will
@@ -189,7 +193,10 @@ func (r *VersionRepo) Link(version string, targetPath string, overwrite bool) er
 	if overwrite {
 		_, err := os.Lstat(targetPath)
 		if !os.IsNotExist(err) {
-			os.Remove(targetPath)
+			err := os.Remove(targetPath)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -202,7 +209,12 @@ func (r *VersionRepo) List() (map[string]string, error) {
 
 	repoBaseDir := r.dir("")
 	f, err := os.Open(repoBaseDir)
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+
+		}
+	}(f)
 	if err != nil {
 		return nil, err
 	}

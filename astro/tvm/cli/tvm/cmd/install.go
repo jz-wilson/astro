@@ -59,7 +59,10 @@ func init() {
 		fmt.Sprintf("path to link Terraform binary to (default: %s )", defaultInstallPath),
 	)
 
-	viper.BindPFlag("path", installCmd.PersistentFlags().Lookup("path"))
+	err := viper.BindPFlag("path", installCmd.PersistentFlags().Lookup("path"))
+	if err != nil {
+		return
+	}
 	viper.SetDefault("installPath", defaultInstallPath)
 
 	rootCmd.AddCommand(installCmd)

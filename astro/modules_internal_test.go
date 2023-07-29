@@ -27,14 +27,14 @@ import (
 func TestModuleExecution(t *testing.T) {
 	t.Parallel()
 
-	conf := conf.Module{
+	c := conf.Module{
 		Name: "TestModule",
 		Path: "test",
 		Variables: []conf.Variable{
-			conf.Variable{
+			{
 				Name: "aws_region",
 			},
-			conf.Variable{
+			{
 				Name:   "environment",
 				Values: []string{"dev", "staging", "prod"},
 			},
@@ -44,7 +44,7 @@ func TestModuleExecution(t *testing.T) {
 	expected := executionSet{
 		&unboundExecution{
 			&execution{
-				moduleConf: &conf,
+				moduleConf: &c,
 				variables: map[string]string{
 					"aws_region":  "{aws_region}",
 					"environment": "dev",
@@ -53,7 +53,7 @@ func TestModuleExecution(t *testing.T) {
 		},
 		&unboundExecution{
 			&execution{
-				moduleConf: &conf,
+				moduleConf: &c,
 				variables: map[string]string{
 					"aws_region":  "{aws_region}",
 					"environment": "staging",
@@ -62,7 +62,7 @@ func TestModuleExecution(t *testing.T) {
 		},
 		&unboundExecution{
 			&execution{
-				moduleConf: &conf,
+				moduleConf: &c,
 				variables: map[string]string{
 					"aws_region":  "{aws_region}",
 					"environment": "prod",
@@ -71,17 +71,17 @@ func TestModuleExecution(t *testing.T) {
 		},
 	}
 
-	assert.EqualValues(t, expected, newModule(conf).executions(NoExecutionParameters()))
+	assert.EqualValues(t, expected, newModule(c).executions(NoExecutionParameters()))
 }
 
 func TestModuleExecutionTarget(t *testing.T) {
 	t.Parallel()
 
-	conf := conf.Module{
+	c := conf.Module{
 		Name: "TestModule",
 		Path: "test",
 		Variables: []conf.Variable{
-			conf.Variable{
+			{
 				Name: "aws_region",
 			},
 		},
@@ -90,7 +90,7 @@ func TestModuleExecutionTarget(t *testing.T) {
 	expected := executionSet{
 		&unboundExecution{
 			&execution{
-				moduleConf: &conf,
+				moduleConf: &c,
 				variables: map[string]string{
 					"aws_region": "{aws_region}",
 				},
@@ -99,7 +99,7 @@ func TestModuleExecutionTarget(t *testing.T) {
 		},
 	}
 
-	assert.EqualValues(t, expected, newModule(conf).executions(ExecutionParameters{
+	assert.EqualValues(t, expected, newModule(c).executions(ExecutionParameters{
 		UserVars:            NoUserVariables(),
 		TerraformParameters: []string{"-target", "one.terraform.entity", "-target", "another.terraform.entity"},
 	}))

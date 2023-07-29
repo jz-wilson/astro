@@ -26,30 +26,30 @@ func TestCartesian(t *testing.T) {
 	t.Parallel()
 
 	params := [][]interface{}{
-		[]interface{}{"a", "b", "c"},
-		[]interface{}{1, 2, 3},
-		[]interface{}{"x", "y"},
+		{"a", "b", "c"},
+		{1, 2, 3},
+		{"x", "y"},
 	}
 	res := cartesian(params...)
 
 	assert.Equal(t, [][]interface{}{
-		[]interface{}{"a", 1, "x"},
-		[]interface{}{"a", 1, "y"},
-		[]interface{}{"a", 2, "x"},
-		[]interface{}{"a", 2, "y"},
-		[]interface{}{"a", 3, "x"},
-		[]interface{}{"a", 3, "y"},
-		[]interface{}{"b", 1, "x"},
-		[]interface{}{"b", 1, "y"},
-		[]interface{}{"b", 2, "x"},
-		[]interface{}{"b", 2, "y"},
-		[]interface{}{"b", 3, "x"},
-		[]interface{}{"b", 3, "y"},
-		[]interface{}{"c", 1, "x"},
-		[]interface{}{"c", 1, "y"},
-		[]interface{}{"c", 2, "x"},
-		[]interface{}{"c", 2, "y"},
-		[]interface{}{"c", 3, "x"},
-		[]interface{}{"c", 3, "y"},
+		{"a", 1, "x"},
+		{"a", 1, "y"},
+		{"a", 2, "x"},
+		{"a", 2, "y"},
+		{"a", 3, "x"},
+		{"a", 3, "y"},
+		{"b", 1, "x"},
+		{"b", 1, "y"},
+		{"b", 2, "x"},
+		{"b", 2, "y"},
+		{"b", 3, "x"},
+		{"b", 3, "y"},
+		{"c", 1, "x"},
+		{"c", 1, "y"},
+		{"c", 2, "x"},
+		{"c", 2, "y"},
+		{"c", 3, "x"},
+		{"c", 3, "y"},
 	}, res)
 }

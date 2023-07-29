@@ -17,7 +17,7 @@
 package astro
 
 import (
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/uber/astro/astro/conf"
 )
